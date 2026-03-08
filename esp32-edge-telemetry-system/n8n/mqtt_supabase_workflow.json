@@ -1,0 +1,156 @@
+{
+  "name": "MQTT to Supabase Temperature Logger",
+  "nodes": [
+    {
+      "parameters": {
+        "topics": "hospital/pharmacy/temp",
+        "options": {
+          "jsonParseBody": true
+        }
+      },
+      "id": "f13d5b3e-2638-44af-9768-971032e9f184",
+      "name": "MQTT Trigger",
+      "type": "n8n-nodes-base.mqttTrigger",
+      "typeVersion": 1,
+      "position": [
+        544,
+        16
+      ],
+      "credentials": {
+        "mqtt": {
+          "id": "DM3rzsb29blkhkNW",
+          "name": "MQTT account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "useCustomSchema": true,
+        "tableId": "temperature_logs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "device_id",
+              "fieldValue": "={{$json[\"message\"][\"device_id\"]}}"
+            },
+            {
+              "fieldId": "temperature",
+              "fieldValue": "={{$json[\"message\"][\"temperature\"]}}"
+            },
+            {
+              "fieldId": "created_at",
+              "fieldValue": "={{$now}}"
+            }
+          ]
+        }
+      },
+      "id": "72fbe582-7853-4c8d-b795-1669693bdd58",
+      "name": "Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        800,
+        -64
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "sv0ZwNThqDFXUz5X",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v17.0/1042624198928655/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer EAAU43AVsCjUBQZC1Q9pc5nCCdrs57xhDD4vvmeYiL7P95WZBw5xvZChqxdkMbZAHFILWmQmf9t5SxJZA7Ig6cUvxxqh8ELST9jXZB3nl8WffXgAQOl6FTtUZCUwMD0Qa6qH8eMzPmz1ZAQUyRgh7VKsVPGTRW0dyZB1sSeDrZB8e8pv1eaZCVk4uhx0kJYfZB3gSiDcQTnPMCfpwEXBkXAuszgS0xHbK7yLK0YGk1fuK6JF9oiwSwTAlQWXquumFUupNp7W3bw3ywHrs09cGVLrFAFOq"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "=json",
+        "specifyBody": "json",
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"923167097622\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": \"{{$json.alert_message}}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        976,
+        96
+      ],
+      "id": "55002661-d34a-4d25-9768-7b7bb935a4a7",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const temperature = parseFloat($json.message.temperature);\nconst threshold = 22;\n\nif (temperature > threshold) {\n  $json.send_alert = true;\n  $json.alert_message = `⚠️ ALERT! Device ${$json.message.device_id} temperature is ${temperature}°C`;\n} else {\n  $json.send_alert = false;\n  $json.alert_message = `Temperature normal: ${temperature}°C`;\n}\n\nreturn $json;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        112
+      ],
+      "id": "10759da3-10ef-41be-9afc-dbe7452ab95a",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "MQTT Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "cce03fc2-a974-4b90-8dc5-5a812382ccfc",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8f04fc062270c0d31a70029aaabc0260d2afec8a8220411c029d92117f18dd0c"
+  },
+  "id": "MJF8PgaAWTagjrFA",
+  "tags": []
+}
